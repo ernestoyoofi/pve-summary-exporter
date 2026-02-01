@@ -1,0 +1,74 @@
+name: Testing Auto Build (CI Continues Integration) With Node.js
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: |
+          npm install
+
+      - name: Verify Syntax
+        run: node --check server.js
+
+  builder:
+    runs-on: ubuntu-22.04
+    needs: [test-build]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Github Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get Version (Git SHA256)
+        id: getversion
+        run: |
+          GIT_SHA=$(git rev-parse --short=12 HEAD)
+          echo "IMAGE_TAG=${GIT_SHA}" >> $GITHUB_OUTPUT
+          echo "Image Tag: ${GIT_SHA}"
+      
+      - name: Setup QEMU Action
+        uses: docker/setup-qemu-action@v3
+      
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
+
+      - name: Login GCHR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
+          push: true
+          build-args: |
+            TARGET=production
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ steps.getversion.outputs.IMAGE_TAG }}
+          provenance: false

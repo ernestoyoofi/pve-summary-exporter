@@ -1,0 +1,53 @@
+services:
+  # Services PVE API Status Exporter
+  pve-summary-exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pve-summary-exporter
+    restart: unless-stopped
+    environment:
+      - PORT=8007
+      - HOST=0.0.0.0
+    user: root
+    volumes:
+      - ./config/proxmox-node.yml:/app/config/proxmox-node.yml
+    networks:
+      - pve-summary-exporter
+
+  # Services Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pve-summary-exporter-prometheus
+    depends_on:
+      - pve-summary-exporter
+    restart: unless-stopped
+    command:
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=1y
+    volumes:
+      - prometheus-data:/prometheus
+    networks:
+      - pve-summary-exporter
+
+  # Services Grafana  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pve-summary-exporter-grafana
+    depends_on:
+      - pve-summary-exporter
+      - prometheus
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      -  grafana-data:/var/lib/grafana
+    networks:
+      - pve-summary-exporter
+
+networks:
+  pve-summary-exporter:
+
+volumes:
+  grafana-data:
+  prometheus-data:

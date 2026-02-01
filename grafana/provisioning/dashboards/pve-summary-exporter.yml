@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: "PVE Status Graf"
+    orgId: 1
+    folder: "PVE Status Graf"
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 15
+    options:
+      path: /etc/grafana/provisioning/dashboards/pve-summary-exporter

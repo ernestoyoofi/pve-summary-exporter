@@ -1,0 +1,61 @@
+services:
+  # Services PVE API Status Exporter
+  pve-summary-exporter:
+    image: ernestoyoofi/pve-summary-exporter:latest
+    container_name: pve-summary-exporter
+    restart: unless-stopped
+    environment:
+      - PORT=8007
+      - HOST=0.0.0.0
+    ports:
+      - 8007:8007
+    user: root
+    volumes:
+      - ./config/proxmox-node.yml:/app/config/proxmox-node.yml
+    networks:
+      - pve-summary-exporter
+
+  # Services Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pve-summary-exporter-prometheus
+    depends_on:
+      - pve-summary-exporter
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=1y
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - pve-summary-exporter
+
+  # Services Grafana  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pve-summary-exporter-grafana
+    depends_on:
+      - pve-summary-exporter
+      - prometheus
+    restart: unless-stopped
+    environment:
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/pve-summary-exporter/pve-summary-exporter.json
+    ports:
+      - 3010:3000
+    volumes:
+      -  grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - pve-summary-exporter
+
+networks:
+  pve-summary-exporter:
+
+volumes:
+  grafana-data:
+  prometheus-data:

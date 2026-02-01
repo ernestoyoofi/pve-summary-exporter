@@ -1,0 +1,15 @@
+# See on original : https://github.com/prometheus/prometheus/blob/main/documentation/examples/prometheus.yml
+
+global:
+  scrape_interval: 60s # Default 40s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["prometheus:9090"]
+        labels:
+          app: "prometheus"
+  - job_name: "pve-summary-exporter"
+    static_configs:
+      - targets: ["pve-summary-exporter:8007"] # Services PVE API Status Exporter

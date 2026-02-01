@@ -1,0 +1,7 @@
+apiVersion: 1
+datasources:
+  - access: proxy
+    basicAuth: false
+    name: "Grafana - PVE Status Node"
+    type: prometheus
+    url: "http://prometheus:9090/"
