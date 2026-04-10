@@ -1,0 +1,11 @@
+monitoring:
+  # Node 1
+  - identify: "Homelabs"
+    # Host PVE
+    host: "https://192.168.51.10:8006"
+    # Form Credentials
+    ticket:
+      username: "root"
+      password: "yourpassword"
+      realm: "pam"
+      new-format: "1"
